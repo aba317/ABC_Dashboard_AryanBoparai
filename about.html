@@ -1,51 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Developer Profile</title>
-
-    <style>
-        body {
-            background-color: #eef3ff;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        nav {
-            background-color: #2c3e50;
-            padding: 15px;
-        }
-
-        nav a {
-            color: white;
-            margin-right: 20px;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00000020;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Developer Profile — Aryan Boparai</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#eef6ff;
+      --nav:#1f3a63;
+      --card:#ffffff;
+      --accent:#2e6be6;
+      --radius:10px;
+      --maxw:900px;
+      --muted:#6b7280;
+    }
+    body{ margin:0; font-family:Inter, Arial, sans-serif; background:var(--bg); color:#0b1220; }
+    nav{ background:var(--nav); padding:14px 20px; color:white; display:flex; gap:18px; align-items:center; }
+    nav a{ color:white; text-decoration:none; font-weight:600; font-size:16px; }
+    .wrap{ width:92%; max-width:var(--maxw); margin:22px auto; }
+    .card{ background:var(--card); border-radius:var(--radius); padding:20px; box-shadow:0 6px 18px rgba(15,23,42,0.06); }
+    .profile-grid{ display:grid; grid-template-columns:160px 1fr; gap:18px; align-items:start; margin-top:12px; }
+    .avatar{ width:140px; height:140px; border-radius:12px; background:linear-gradient(135deg,#2e6be6,#6fb1ff); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:20px; }
+    h1{ margin:0 0 6px 0; }
+    p{ color:var(--muted); line-height:1.6; }
+    .contact{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+    .chip{ background:#f1f5ff; padding:8px 10px; border-radius:8px; font-weight:600; color:var(--muted); }
+  </style>
 </head>
-
 <body>
 
 <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="about.html">Developer Profile</a>
+  <a href="index.html">Dashboard</a>
+  <a href="about.html">Developer Profile</a>
 </nav>
 
-<div class="container">
-    <h1>Developer: Aryan Boparai</h1>
-    <p>Welcome to the Warehouse Command Center project.</p>
+<div class="wrap">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h1>Developer: Aryan Boparai</h1>
+        <div style="color:var(--muted);">Consultant & Frontend Developer — ABC Logistics Command Center</div>
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <div class="avatar">AB</div>
+      <div>
+        <h3 style="margin-top:0">About Aryan</h3>
+        <p>
+          I build practical, user-focused web tools that help operations teams make faster, data-driven decisions.
+          For ABC Logistics I created this Warehouse Command Center so Sarah, the floor manager, can input items,
+          track quantities visually, and rely on the browser to retain data between sessions.
+        </p>
+
+        <p>
+          Technical highlights: a lightweight multi-page site using plain HTML, CSS, and JavaScript; Chart.js for
+          visualization; and browser localStorage for persistent data without a backend. The interface is designed
+          for quick scanning on the warehouse floor and simple, low-friction data entry.
+        </p>
+
+        <div class="contact">
+          <div class="chip">Location: Vancouver, BC</div>
+          <div class="chip">Role: Frontend Consultant</div>
+          <div class="chip">Email: ary an dot example at email (replace with your contact)</div>
+        </div>
+
+        <h4 style="margin-top:14px">How to customize this page</h4>
+        <p class="small" style="color:var(--muted)">
+          To change the bio text, open <code>about.html</code> in a text editor and edit the paragraphs under "About Aryan".
+          To update contact details, edit the "contact" chips above.
+        </p>
+      </div>
+    </div>
+  </div>
 </div>
 
 </body>
