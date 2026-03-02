@@ -38,10 +38,24 @@
       font-weight:600;
       font-size:16px;
     }
+    .banner {
+      display:none;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 16px;
+      color:#071029;
+      background:#e6f0ff;
+      border-left:6px solid var(--accent);
+    }
+    .banner.error { background:#fff0f0; border-left-color:var(--danger); color:#2b0b0b; }
+    .banner .msg { font-size:15px; }
+    .banner .close { background:transparent; border:0; font-weight:700; cursor:pointer; color:var(--muted); }
+
     .wrap{
       width:92%;
       max-width:var(--maxw);
-      margin:22px auto;
+      margin:18px auto;
     }
     .card{
       background:var(--card);
@@ -98,7 +112,7 @@
     .meta{ color:var(--muted); font-size:13px; }
     .small{ font-size:13px; color:var(--muted); margin-top:6px; }
     .row{ display:flex; gap:10px; align-items:center; }
-    .chart-wrap{ padding:6px; }
+    .chart-wrap{ padding:6px; height:320px; }
   </style>
 </head>
 <body>
@@ -109,6 +123,11 @@
 </nav>
 
 <div class="wrap">
+  <!-- Persistent banner -->
+  <div id="banner" class="banner" role="status" aria-live="polite">
+    <div class="msg" id="bannerMsg"></div>
+    <button class="close" id="bannerClose" aria-label="Dismiss message">×</button>
+  </div>
 
   <div class="card">
     <h2 style="margin:0 0 8px 0">ABC Logistics — Warehouse Command Center</h2>
@@ -135,7 +154,6 @@
         <button id="addBtn">Add</button>
         <button id="subBtn">Subtract</button>
         <button id="clearBtn" class="danger">Clear All Items</button>
-        <button id="exportBtn" class="secondary" style="display:none">Export (disabled)</button>
       </div>
 
       <div style="margin-top:14px">
@@ -158,16 +176,10 @@
 </div>
 
 <script>
-  // Key for localStorage
   const STORAGE_KEY = "abc_inventory_v1";
-
-  // In-memory inventory: map of normalizedName -> {name:displayName, qty: number}
   let inventory = {};
-
-  // Chart.js instance
   let chart = null;
 
-  // DOM refs
   const itemName = document.getElementById("itemName");
   const itemQty = document.getElementById("itemQty");
   const inventoryList = document.getElementById("inventoryList");
@@ -176,35 +188,46 @@
   const subBtn = document.getElementById("subBtn");
   const clearBtn = document.getElementById("clearBtn");
 
-  // Load from localStorage
+  // Banner elements
+  const banner = document.getElementById("banner");
+  const bannerMsg = document.getElementById("bannerMsg");
+  const bannerClose = document.getElementById("bannerClose");
+
+  function showBanner(message, type = "info"){
+    bannerMsg.textContent = message;
+    banner.classList.toggle("error", type === "error");
+    banner.style.display = "flex";
+  }
+
+  function hideBanner(){
+    banner.style.display = "none";
+    bannerMsg.textContent = "";
+    banner.classList.remove("error");
+  }
+
+  bannerClose.addEventListener("click", hideBanner);
+
   function loadInventory(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) { inventory = {}; return; }
-      const parsed = JSON.parse(raw);
-      // Ensure structure: { normalizedName: {name, qty} }
-      inventory = parsed || {};
+      inventory = raw ? JSON.parse(raw) : {};
     }catch(e){
       inventory = {};
     }
   }
 
-  // Save to localStorage
   function saveInventory(){
     localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
     renderList();
     renderChart();
   }
 
-  // Normalize item name for keying (case-insensitive, trimmed)
   function normalizeName(name){
     return name.trim().toLowerCase();
   }
 
-  // Validate quantity input: must be integer >= 0
   function parseQuantity(value){
     if(value === "" || value === null || value === undefined) return NaN;
-    // allow decimals typed but convert to integer
     const n = Number(value);
     if(!Number.isFinite(n)) return NaN;
     const intN = Math.trunc(n);
@@ -212,7 +235,6 @@
     return intN;
   }
 
-  // Add quantity to item (create if missing)
   function addItem(){
     const rawName = itemName.value || "";
     const qtyVal = itemQty.value;
@@ -220,11 +242,11 @@
 
     const nameTrim = rawName.trim();
     if(!nameTrim){
-      alert("Please enter an item name.");
+      showBanner("Please enter an item name.", "error");
       return;
     }
-    if(Number.isNaN(qty)){
-      alert("Please enter a valid non-negative whole number for quantity.");
+    if(Number.isNaN(qty) || qty === 0){
+      showBanner("Enter a positive whole number to add.", "error");
       return;
     }
 
@@ -235,9 +257,9 @@
     inventory[key].qty = inventory[key].qty + qty;
     saveInventory();
     clearInputs();
+    showBanner(`Added ${qty} to "${inventory[key].name}".`, "info");
   }
 
-  // Subtract quantity from item (floor at 0)
   function subtractItem(){
     const rawName = itemName.value || "";
     const qtyVal = itemQty.value;
@@ -245,41 +267,45 @@
 
     const nameTrim = rawName.trim();
     if(!nameTrim){
-      alert("Please enter an item name.");
+      showBanner("Please enter an item name.", "error");
       return;
     }
-    if(Number.isNaN(qty)){
-      alert("Please enter a valid non-negative whole number for quantity.");
+    if(Number.isNaN(qty) || qty === 0){
+      showBanner("Enter a positive whole number to subtract.", "error");
       return;
     }
 
     const key = normalizeName(nameTrim);
     if(!inventory[key]){
-      // If item doesn't exist, treat as zero and do nothing
-      alert("Item not found in inventory.");
+      showBanner(`Item "${nameTrim}" not found.`, "error");
       return;
     }
-    inventory[key].qty = inventory[key].qty - qty;
-    if(inventory[key].qty < 0) inventory[key].qty = 0;
+
+    const current = inventory[key].qty;
+    if(qty > current){
+      showBanner(`Cannot subtract ${qty} from "${inventory[key].name}" — only ${current} in stock.`, "error");
+      return;
+    }
+
+    inventory[key].qty = current - qty;
     saveInventory();
     clearInputs();
+    showBanner(`Subtracted ${qty} from "${inventory[key].name}".`, "info");
   }
 
-  // Clear inputs
   function clearInputs(){
     itemName.value = "";
     itemQty.value = "";
     itemName.focus();
   }
 
-  // Clear all items from inventory and localStorage
   function clearAll(){
     if(!confirm("Clear all items from inventory? This cannot be undone.")) return;
     inventory = {};
     saveInventory();
+    showBanner("All items cleared.", "info");
   }
 
-  // Render the list in the left column
   function renderList(){
     inventoryList.innerHTML = "";
     const keys = Object.keys(inventory);
@@ -290,7 +316,6 @@
       emptyNote.style.display = "none";
     }
 
-    // Sort alphabetically by display name
     keys.sort((a,b) => inventory[a].name.localeCompare(inventory[b].name, undefined, {sensitivity:'base'}));
 
     for(const k of keys){
@@ -315,18 +340,25 @@
       const right = document.createElement("div");
       right.className = "row";
 
-      // Quick +/- buttons for convenience
       const plus = document.createElement("button");
       plus.textContent = "+1";
       plus.style.padding = "6px 8px";
       plus.style.fontSize = "13px";
-      plus.onclick = () => { inventory[k].qty += 1; saveInventory(); };
+      plus.onclick = () => { inventory[k].qty += 1; saveInventory(); showBanner(`Added 1 to "${inventory[k].name}".`, "info"); };
 
       const minus = document.createElement("button");
       minus.textContent = "-1";
       minus.style.padding = "6px 8px";
       minus.style.fontSize = "13px";
-      minus.onclick = () => { inventory[k].qty = Math.max(0, inventory[k].qty - 1); saveInventory(); };
+      minus.onclick = () => {
+        if(inventory[k].qty <= 0){
+          showBanner(`"${item.name}" already has 0 in stock; cannot subtract further.`, "error");
+          return;
+        }
+        inventory[k].qty = Math.max(0, inventory[k].qty - 1);
+        saveInventory();
+        showBanner(`Subtracted 1 from "${inventory[k].name}".`, "info");
+      };
 
       const del = document.createElement("button");
       del.textContent = "Delete";
@@ -337,6 +369,7 @@
         if(!confirm(`Delete "${item.name}" from inventory?`)) return;
         delete inventory[k];
         saveInventory();
+        showBanner(`Deleted "${item.name}".`, "info");
       };
 
       right.appendChild(plus);
@@ -349,21 +382,18 @@
     }
   }
 
-  // Render Chart.js chart
   function renderChart(){
     const labels = [];
     const data = [];
     const bgColors = [];
 
     const keys = Object.keys(inventory);
-    // Sort same as list
     keys.sort((a,b) => inventory[a].name.localeCompare(inventory[b].name, undefined, {sensitivity:'base'}));
 
     for(const k of keys){
       const item = inventory[k];
       labels.push(item.name);
       data.push(item.qty);
-      // Low stock threshold: < 10
       bgColors.push(item.qty < 10 ? getComputedStyle(document.documentElement).getPropertyValue('--danger').trim() || '#e74c3c' : getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2e6be6');
     }
 
@@ -400,22 +430,19 @@
     });
   }
 
-  // Wire up buttons
   addBtn.addEventListener("click", addItem);
   subBtn.addEventListener("click", subtractItem);
   clearBtn.addEventListener("click", clearAll);
 
-  // Keyboard: Enter to add
   itemQty.addEventListener("keydown", (e) => {
     if(e.key === "Enter") addItem();
   });
 
-  // Initialize
   loadInventory();
   renderList();
   renderChart();
 
-  // Expose save for console debugging (optional)
+  // Expose for debugging
   window._abc_save = saveInventory;
 </script>
 
