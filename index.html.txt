@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Warehouse Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background-color: #eef3ff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav {
+            background-color: #2c3e50;
+            padding: 15px;
+        }
+
+        nav a {
+            color: white;
+            margin-right: 20px;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #00000020;
+        }
+
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+    <a href="index.html">Dashboard</a>
+    <a href="about.html">Developer Profile</a>
+</nav>
+
+<div class="container">
+    <h2>Inventory Manager</h2>
+
+    <input id="itemName" placeholder="Item name">
+    <input id="itemQty" type="number" placeholder="Quantity">
+
+    <button onclick="addItem()">Add</button>
+    <button onclick="subtractItem()">Subtract</button>
+
+    <h3>Current Inventory</h3>
+    <ul id="inventoryList"></ul>
+
+    <canvas id="inventoryChart"></canvas>
+</div>
+
+<script>
+    let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
+
+    function save() {
+        localStorage.setItem("inventory", JSON.stringify(inventory));
+        updateList();
+        updateChart();
+    }
+
+    function addItem() {
+        let name = itemName.value.trim();
+        let qty = parseInt(itemQty.value);
+
+        if (!name || isNaN(qty)) return;
+
+        inventory[name] = (inventory[name] || 0) + qty;
+        save();
+    }
+
+    function subtractItem() {
+        let name = itemName.value.trim();
+        let qty = parseInt(itemQty.value);
+
+        if (!name || isNaN(qty)) return;
+
+        inventory[name] = (inventory[name] || 0) - qty;
+
+        if (inventory[name] < 0) inventory[name] = 0;
+
+        save();
+    }
+
+    function updateList() {
+        inventoryList.innerHTML = "";
+        for (let item in inventory) {
+            let li = document.createElement("li");
+            li.textContent = `${item}: ${inventory[item]}`;
+            inventoryList.appendChild(li);
+        }
+    }
+
+    let chart;
+
+    function updateChart() {
+        let labels = Object.keys(inventory);
+        let data = Object.values(inventory);
+
+        if (chart) chart.destroy();
+
+        chart = new Chart(document.getElementById("inventoryChart"), {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Inventory Levels",
+                    data: data,
+                    backgroundColor: "#4e73df"
+                }]
+            }
+        });
+    }
+
+    updateList();
+    updateChart();
+</script>
+
+</body>
+</html>
