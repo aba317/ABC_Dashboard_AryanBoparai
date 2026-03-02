@@ -1,138 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Warehouse Command Center</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8" />
+  <title>Warehouse Command Center</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        body {
-            background-color: #eef3ff;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        nav {
-            background-color: #2c3e50;
-            padding: 15px;
-        }
-
-        nav a {
-            color: white;
-            margin-right: 20px;
-            text-decoration: none;
-            font-size: 18px;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00000020;
-        }
-
-        input, button {
-            padding: 10px;
-            margin: 5px;
-            font-size: 16px;
-        }
-
-        button {
-            cursor: pointer;
-        }
-    </style>
+  <style>
+    :root{
+      --bg:#eef6ff;
+      --nav:#1f3a63;
+      --card:#ffffff;
+      --accent:#2e6be6;
+      --danger:#e74c3c;
+      --muted:#6b7280;
+      --radius:10px;
+      --maxw:900px;
+    }
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:var(--bg);
+      color:#0b1220;
+      -webkit-font-smoothing:antialiased;
+    }
+    nav{
+      background:var(--nav);
+      padding:14px 20px;
+      color:white;
+      display:flex;
+      gap:18px;
+      align-items:center;
+    }
+    nav a{
+      color:white;
+      text-decoration:none;
+      font-weight:600;
+      font-size:16px;
+    }
+    .wrap{
+      width:92%;
+      max-width:var(--maxw);
+      margin:22px auto;
+    }
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:0 6px 18px rgba(15,23,42,0.06);
+      margin-bottom:18px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 420px;
+      gap:18px;
+    }
+    @media (max-width:900px){
+      .grid{ grid-template-columns:1fr; }
+    }
+    label{ display:block; font-size:14px; color:var(--muted); margin-bottom:6px; }
+    input[type="text"], input[type="number"]{
+      width:100%;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid #dbe6ff;
+      font-size:15px;
+      box-sizing:border-box;
+    }
+    .controls{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    button{
+      background:var(--accent);
+      color:white;
+      border:0;
+      padding:10px 14px;
+      border-radius:8px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    button.secondary{
+      background:#6b7280;
+    }
+    button.danger{
+      background:var(--danger);
+    }
+    ul#inventoryList{ list-style:none; padding:0; margin:12px 0 0 0; max-height:260px; overflow:auto; }
+    ul#inventoryList li{
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #f0f4ff;
+      margin-bottom:8px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      font-size:15px;
+    }
+    .meta{ color:var(--muted); font-size:13px; }
+    .small{ font-size:13px; color:var(--muted); margin-top:6px; }
+    .row{ display:flex; gap:10px; align-items:center; }
+    .chart-wrap{ padding:6px; }
+  </style>
 </head>
-
 <body>
 
 <nav>
-    <a href="index.html">Dashboard</a>
-    <a href="about.html">Developer Profile</a>
+  <a href="index.html">Dashboard</a>
+  <a href="about.html">Developer Profile</a>
 </nav>
 
-<div class="container">
-    <h2>Inventory Manager</h2>
+<div class="wrap">
 
-    <input id="itemName" placeholder="Item name">
-    <input id="itemQty" type="number" placeholder="Quantity">
+  <div class="card">
+    <h2 style="margin:0 0 8px 0">ABC Logistics — Warehouse Command Center</h2>
+    <div class="small">Stakeholder: <strong>Sarah, Floor Manager</strong>. Input items and quantities; data persists in the browser.</div>
+  </div>
 
-    <button onclick="addItem()">Add</button>
-    <button onclick="subtractItem()">Subtract</button>
+  <div class="grid">
 
-    <h3>Current Inventory</h3>
-    <ul id="inventoryList"></ul>
+    <!-- Left: Form + List -->
+    <div class="card">
+      <h3 style="margin-top:0">Manage Inventory</h3>
 
-    <canvas id="inventoryChart"></canvas>
+      <div>
+        <label for="itemName">Item name</label>
+        <input id="itemName" type="text" placeholder="e.g., Pallet A23" autocomplete="off" />
+      </div>
+
+      <div style="margin-top:10px">
+        <label for="itemQty">Quantity (whole number)</label>
+        <input id="itemQty" type="number" placeholder="e.g., 12" min="0" />
+      </div>
+
+      <div class="controls" style="margin-top:12px">
+        <button id="addBtn">Add</button>
+        <button id="subBtn">Subtract</button>
+        <button id="clearBtn" class="danger">Clear All Items</button>
+        <button id="exportBtn" class="secondary" style="display:none">Export (disabled)</button>
+      </div>
+
+      <div style="margin-top:14px">
+        <h4 style="margin:0 0 8px 0">Current Inventory</h4>
+        <ul id="inventoryList" aria-live="polite"></ul>
+        <div id="emptyNote" class="small" style="display:none">No items yet. Add an item to begin tracking.</div>
+      </div>
+    </div>
+
+    <!-- Right: Chart -->
+    <div class="card">
+      <h3 style="margin-top:0">Inventory Visualization</h3>
+      <div class="chart-wrap">
+        <canvas id="inventoryChart" width="400" height="300"></canvas>
+      </div>
+      <div class="small" style="margin-top:10px">Low stock (quantity &lt; 10) is highlighted in red.</div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-    let inventory = JSON.parse(localStorage.getItem("inventory")) || {};
+  // Key for localStorage
+  const STORAGE_KEY = "abc_inventory_v1";
 
-    function save() {
-        localStorage.setItem("inventory", JSON.stringify(inventory));
-        updateList();
-        updateChart();
+  // In-memory inventory: map of normalizedName -> {name:displayName, qty: number}
+  let inventory = {};
+
+  // Chart.js instance
+  let chart = null;
+
+  // DOM refs
+  const itemName = document.getElementById("itemName");
+  const itemQty = document.getElementById("itemQty");
+  const inventoryList = document.getElementById("inventoryList");
+  const emptyNote = document.getElementById("emptyNote");
+  const addBtn = document.getElementById("addBtn");
+  const subBtn = document.getElementById("subBtn");
+  const clearBtn = document.getElementById("clearBtn");
+
+  // Load from localStorage
+  function loadInventory(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) { inventory = {}; return; }
+      const parsed = JSON.parse(raw);
+      // Ensure structure: { normalizedName: {name, qty} }
+      inventory = parsed || {};
+    }catch(e){
+      inventory = {};
+    }
+  }
+
+  // Save to localStorage
+  function saveInventory(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
+    renderList();
+    renderChart();
+  }
+
+  // Normalize item name for keying (case-insensitive, trimmed)
+  function normalizeName(name){
+    return name.trim().toLowerCase();
+  }
+
+  // Validate quantity input: must be integer >= 0
+  function parseQuantity(value){
+    if(value === "" || value === null || value === undefined) return NaN;
+    // allow decimals typed but convert to integer
+    const n = Number(value);
+    if(!Number.isFinite(n)) return NaN;
+    const intN = Math.trunc(n);
+    if(intN < 0) return NaN;
+    return intN;
+  }
+
+  // Add quantity to item (create if missing)
+  function addItem(){
+    const rawName = itemName.value || "";
+    const qtyVal = itemQty.value;
+    const qty = parseQuantity(qtyVal);
+
+    const nameTrim = rawName.trim();
+    if(!nameTrim){
+      alert("Please enter an item name.");
+      return;
+    }
+    if(Number.isNaN(qty)){
+      alert("Please enter a valid non-negative whole number for quantity.");
+      return;
     }
 
-    function addItem() {
-        let name = itemName.value.trim();
-        let qty = parseInt(itemQty.value);
+    const key = normalizeName(nameTrim);
+    if(!inventory[key]){
+      inventory[key] = { name: nameTrim, qty: 0 };
+    }
+    inventory[key].qty = inventory[key].qty + qty;
+    saveInventory();
+    clearInputs();
+  }
 
-        if (!name || isNaN(qty)) return;
+  // Subtract quantity from item (floor at 0)
+  function subtractItem(){
+    const rawName = itemName.value || "";
+    const qtyVal = itemQty.value;
+    const qty = parseQuantity(qtyVal);
 
-        inventory[name] = (inventory[name] || 0) + qty;
-        save();
+    const nameTrim = rawName.trim();
+    if(!nameTrim){
+      alert("Please enter an item name.");
+      return;
+    }
+    if(Number.isNaN(qty)){
+      alert("Please enter a valid non-negative whole number for quantity.");
+      return;
     }
 
-    function subtractItem() {
-        let name = itemName.value.trim();
-        let qty = parseInt(itemQty.value);
+    const key = normalizeName(nameTrim);
+    if(!inventory[key]){
+      // If item doesn't exist, treat as zero and do nothing
+      alert("Item not found in inventory.");
+      return;
+    }
+    inventory[key].qty = inventory[key].qty - qty;
+    if(inventory[key].qty < 0) inventory[key].qty = 0;
+    saveInventory();
+    clearInputs();
+  }
 
-        if (!name || isNaN(qty)) return;
+  // Clear inputs
+  function clearInputs(){
+    itemName.value = "";
+    itemQty.value = "";
+    itemName.focus();
+  }
 
-        inventory[name] = (inventory[name] || 0) - qty;
+  // Clear all items from inventory and localStorage
+  function clearAll(){
+    if(!confirm("Clear all items from inventory? This cannot be undone.")) return;
+    inventory = {};
+    saveInventory();
+  }
 
-        if (inventory[name] < 0) inventory[name] = 0;
-
-        save();
+  // Render the list in the left column
+  function renderList(){
+    inventoryList.innerHTML = "";
+    const keys = Object.keys(inventory);
+    if(keys.length === 0){
+      emptyNote.style.display = "block";
+      return;
+    } else {
+      emptyNote.style.display = "none";
     }
 
-    function updateList() {
-        inventoryList.innerHTML = "";
-        for (let item in inventory) {
-            let li = document.createElement("li");
-            li.textContent = `${item}: ${inventory[item]}`;
-            inventoryList.appendChild(li);
+    // Sort alphabetically by display name
+    keys.sort((a,b) => inventory[a].name.localeCompare(inventory[b].name, undefined, {sensitivity:'base'}));
+
+    for(const k of keys){
+      const item = inventory[k];
+      const li = document.createElement("li");
+
+      const left = document.createElement("div");
+      left.style.display = "flex";
+      left.style.flexDirection = "column";
+
+      const title = document.createElement("div");
+      title.textContent = item.name;
+      title.style.fontWeight = "600";
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `Quantity: ${item.qty}`;
+
+      left.appendChild(title);
+      left.appendChild(meta);
+
+      const right = document.createElement("div");
+      right.className = "row";
+
+      // Quick +/- buttons for convenience
+      const plus = document.createElement("button");
+      plus.textContent = "+1";
+      plus.style.padding = "6px 8px";
+      plus.style.fontSize = "13px";
+      plus.onclick = () => { inventory[k].qty += 1; saveInventory(); };
+
+      const minus = document.createElement("button");
+      minus.textContent = "-1";
+      minus.style.padding = "6px 8px";
+      minus.style.fontSize = "13px";
+      minus.onclick = () => { inventory[k].qty = Math.max(0, inventory[k].qty - 1); saveInventory(); };
+
+      const del = document.createElement("button");
+      del.textContent = "Delete";
+      del.style.padding = "6px 8px";
+      del.style.fontSize = "13px";
+      del.style.background = "#ef4444";
+      del.onclick = () => {
+        if(!confirm(`Delete "${item.name}" from inventory?`)) return;
+        delete inventory[k];
+        saveInventory();
+      };
+
+      right.appendChild(plus);
+      right.appendChild(minus);
+      right.appendChild(del);
+
+      li.appendChild(left);
+      li.appendChild(right);
+      inventoryList.appendChild(li);
+    }
+  }
+
+  // Render Chart.js chart
+  function renderChart(){
+    const labels = [];
+    const data = [];
+    const bgColors = [];
+
+    const keys = Object.keys(inventory);
+    // Sort same as list
+    keys.sort((a,b) => inventory[a].name.localeCompare(inventory[b].name, undefined, {sensitivity:'base'}));
+
+    for(const k of keys){
+      const item = inventory[k];
+      labels.push(item.name);
+      data.push(item.qty);
+      // Low stock threshold: < 10
+      bgColors.push(item.qty < 10 ? getComputedStyle(document.documentElement).getPropertyValue('--danger').trim() || '#e74c3c' : getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#2e6be6');
+    }
+
+    const ctx = document.getElementById("inventoryChart").getContext("2d");
+
+    if(chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Quantity',
+          data: data,
+          backgroundColor: bgColors,
+          borderRadius: 6,
+          barThickness: 28
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision:0 }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}` } }
         }
-    }
+      }
+    });
+  }
 
-    let chart;
+  // Wire up buttons
+  addBtn.addEventListener("click", addItem);
+  subBtn.addEventListener("click", subtractItem);
+  clearBtn.addEventListener("click", clearAll);
 
-    function updateChart() {
-        let labels = Object.keys(inventory);
-        let data = Object.values(inventory);
+  // Keyboard: Enter to add
+  itemQty.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") addItem();
+  });
 
-        if (chart) chart.destroy();
+  // Initialize
+  loadInventory();
+  renderList();
+  renderChart();
 
-        chart = new Chart(document.getElementById("inventoryChart"), {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Inventory Levels",
-                    data: data,
-                    backgroundColor: "#4e73df"
-                }]
-            }
-        });
-    }
-
-    updateList();
-    updateChart();
+  // Expose save for console debugging (optional)
+  window._abc_save = saveInventory;
 </script>
 
 </body>
